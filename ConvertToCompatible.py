@@ -8,28 +8,32 @@ Der er problemer med parquet tingen på grund af TIME kolonnen. Den er gemt som 
 Hvis I render ind i det samme problem, så er der det her program til at konvertere det til en kompatibel parquet fil.
 
 '''
-source = Path(r"C:\Github\standard-chess-games-high-elo")
-destination = Path(r"C:\Github\chess-spark-compatible")
-destination.mkdir(exist_ok=True)
 
-for file in source.rglob("*.parquet"):
-    table = pq.read_table(file)
+def converter():
+    source = Path(r"C:\Github\standard-chess-games-high-elo")
+    destination = Path(r"C:\Github\chess-spark-compatible")
+    destination.mkdir(exist_ok=True)
 
-    for name in table.column_names:
-        column = table[name]
+    for file in source.rglob("*.parquet"):
+        table = pq.read_table(file)
 
-        if pa.types.is_time32(column.type) or pa.types.is_time64(column.type):
-            index = table.schema.get_field_index(name)
+        for name in table.column_names:
+            column = table[name]
 
-            table = table.set_column(
-                index,
-                name,
-                column.cast(pa.string())
-            )
+            if pa.types.is_time32(column.type) or pa.types.is_time64(column.type):
+                index = table.schema.get_field_index(name)
 
-    output = destination / file.relative_to(source)
-    output.parent.mkdir(parents=True, exist_ok=True)
+                table = table.set_column(
+                    index,
+                    name,
+                    column.cast(pa.string())
+                )
 
-    pq.write_table(table, output)
+        output = destination / file.relative_to(source)
+        output.parent.mkdir(parents=True, exist_ok=True)
 
-print("Done")
+        pq.write_table(table, output)
+
+    print("Done")
+    return destination
+    
